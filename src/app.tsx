@@ -21,7 +21,11 @@ import {
   Sun,
   Trash,
   PaperPlaneTilt,
+  FilePlus,
 } from "@phosphor-icons/react";
+import { useNavigate, useParams } from "react-router";
+import { generateId } from "ai";
+import useUser from "./hooks/useUser";
 
 // List of tools that require human confirmation
 const toolsRequiringConfirmation: (keyof typeof tools)[] = [
@@ -29,6 +33,10 @@ const toolsRequiringConfirmation: (keyof typeof tools)[] = [
 ];
 
 export default function Chat() {
+  const navigate = useNavigate();
+  const { loggedOut } = useUser();
+
+  const { threadID } = useParams<{ threadID: string }>();
   const [theme, setTheme] = useState<"dark" | "light">(() => {
     // Check localStorage first, default to dark if not found
     const savedTheme = localStorage.getItem("theme");
@@ -61,13 +69,30 @@ export default function Chat() {
     scrollToBottom();
   }, [scrollToBottom]);
 
+  useEffect(() => {
+    if (!loggedOut) return;
+    navigate("/");
+  }, [loggedOut]);
+
   const toggleTheme = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
     setTheme(newTheme);
   };
 
+  const createNewThread = () => {
+    const newThread = generateId();
+    navigate(`/c/${newThread}`);
+    //TODO: check why changing the threadID does not update the agent
+    setMessages([]);
+  };
+
   const agent = useAgent({
     agent: "chat",
+    name: threadID ?? undefined,
+  });
+
+  agent.addEventListener('error', (e) => {
+    console.dir(e);
   });
 
   const {
@@ -77,6 +102,7 @@ export default function Chat() {
     handleSubmit: handleAgentSubmit,
     addToolResult,
     clearHistory,
+    setMessages,
   } = useAgentChat({
     agent,
     maxSteps: 5,
@@ -101,6 +127,16 @@ export default function Chat() {
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
+
+  if (!threadID) {
+    console.log(`
+Creating new thread because threadID is not defined.
+This only happens on dev because vite plugin does not support run_worker_first yet.
+https://github.com/cloudflare/workers-sdk/issues/8430
+`);
+    createNewThread();
+    return <></>;
+  }
 
   return (
     <div className="h-[100vh] w-full p-4 flex justify-center items-center bg-fixed overflow-hidden">
@@ -153,6 +189,18 @@ export default function Chat() {
             size="md"
             shape="square"
             className="rounded-full h-9 w-9"
+            tooltip={"New Thread"}
+            onClick={createNewThread}
+          >
+            <FilePlus size={20} />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="md"
+            shape="square"
+            className="rounded-full h-9 w-9"
+            tooltip={"Clear History"}
             onClick={clearHistory}
           >
             <Trash size={20} />
@@ -358,7 +406,9 @@ export default function Chat() {
   );
 }
 
-const hasOpenAiKeyPromise = fetch("/check-open-ai-key").then((res) =>
+const hasOpenAiKeyPromise = fetch("/check-open-ai-key", {
+  credentials: "include",
+}).then((res) =>
   res.json<{ success: boolean }>()
 );
 
