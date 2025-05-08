@@ -4,7 +4,6 @@ import { Button } from "@/components/button/Button";
 // Icon imports
 import { FilePlus, Moon, Sun } from "@phosphor-icons/react";
 import { useNavigate } from "react-router";
-import { generateId } from "ai";
 import useUser from "../hooks/useUser";
 import { useEffect, useState, type ReactNode } from "react";
 import UserButton from "../components/auth0/UserButton";
@@ -38,9 +37,14 @@ export function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { user } = useUser();
 
-  const createNewThread = () => {
-    const newThread = generateId();
-    navigate(`/c/${newThread}`);
+  const createNewChat = async () => {
+    // const newThread = generateId();
+    const createChatResponse = await fetch("/c", {
+      method: "POST",
+      credentials: "include",
+    });
+    const { id } = (await createChatResponse.json()) as { id: string };
+    navigate(`/c/${id}`);
   };
 
   const [theme, setTheme] = useState<"dark" | "light">(() => {
@@ -92,22 +96,34 @@ export function Layout({ children }: { children: ReactNode }) {
             </div>
 
             <div className="flex-1">
-              <h2 className="font-semibold text-base">Home</h2>
+              <h2 className="font-semibold text-base">
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate("/");
+                  }}
+                >
+                  Home
+                </a>
+              </h2>
             </div>
 
             {/* Extra toolbar elements */}
             {toolbarElements.length > 0 && toolbarElements}
 
-            <Button
-              variant="ghost"
-              size="md"
-              shape="square"
-              className="rounded-full h-9 w-9 cursor-pointer"
-              tooltip={"New Thread"}
-              onClick={createNewThread}
-            >
-              <FilePlus size={20} />
-            </Button>
+            {user && (
+              <Button
+                variant="ghost"
+                size="md"
+                shape="square"
+                className="rounded-full h-9 w-9 cursor-pointer"
+                tooltip={"New Thread"}
+                onClick={createNewChat}
+              >
+                <FilePlus size={20} />
+              </Button>
+            )}
 
             {user && (
               <UserButton user={user} logoutUrl="/logout">
@@ -124,10 +140,10 @@ export function Layout({ children }: { children: ReactNode }) {
             )}
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24 max-h-[calc(100vh-10rem)]">
+          <>
             {/* Extra toolbar elements */}
             {contentElements.length > 0 && contentElements}
-          </div>
+          </>
         </div>
       </div>
     </div>

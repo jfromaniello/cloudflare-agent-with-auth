@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback, use } from "react";
 import { useAgent } from "agents/react";
 import { useAgentChat } from "agents/ai-react";
 import type { Message } from "@ai-sdk/react";
-import type { tools } from "../tools";
+import type { tools } from "../agent/tools";
 
 // Component imports
 import { Button } from "@/components/button/Button";
@@ -24,6 +24,7 @@ import { useNavigate, useParams } from "react-router";
 import useUser from "../hooks/useUser";
 import { Layout } from "./Layout";
 import { Tooltip } from "../components/tooltip/Tooltip";
+import useChatTitle from "@/hooks/useChatTitle";
 
 // List of tools that require human confirmation
 const toolsRequiringConfirmation: (keyof typeof tools)[] = [
@@ -43,6 +44,11 @@ export default function Chat() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
+  const { title } = useChatTitle(threadID!);
+
+  useEffect(() => {
+    document.title = `AI Chat - ${title}`;
+  }, [title]);
 
   // Scroll to bottom on mount
   useEffect(() => {

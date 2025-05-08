@@ -3,9 +3,6 @@ import useSWR from "swr";
 const userFetcher = async () => {
   const response = await fetch("/user", {
     method: "GET",
-    headers: {
-      "Content-Type": "application/json"
-    },
     credentials: "include"
   });
   if (!response.ok) {
@@ -23,7 +20,7 @@ const userFetcher = async () => {
 
 export default function useUser(): Record<string, any> {
   const { data, mutate, error } = useSWR("api_user", userFetcher, {
-    refreshInterval: 10000,
+    refreshInterval: 20000,
   });
 
   const loading = !data && !error;

@@ -27,6 +27,12 @@
 			}
 		]
 	},
+	"kv_namespaces": [
+		{
+			"binding": "ChatList",
+			"id": "2b9a0ed9c9d94c3a905ad242fbf44fcf"
+		}
+	],
 	"migrations": [
 		{
 			"tag": "v1",

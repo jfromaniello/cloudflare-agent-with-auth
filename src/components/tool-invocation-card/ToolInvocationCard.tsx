@@ -3,7 +3,7 @@ import { Robot, CaretDown } from "@phosphor-icons/react";
 import { Button } from "@/components/button/Button";
 import { Card } from "@/components/card/Card";
 import { Tooltip } from "@/components/tooltip/Tooltip";
-import { APPROVAL } from "@/shared";
+import { APPROVAL } from "@/agent/shared";
 
 interface ToolInvocation {
   toolName: string;

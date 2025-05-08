@@ -1,3 +1,13 @@
 OPENAI_API_KEY=sk-proj-1234567890
 # Optional - Cloudflare AI Gateway https://developers.cloudflare.com/ai-gateway/
 # GATEWAY_BASE_URL=https://gateway.ai.cloudflare.com/v1/..
+
+#auth0
+# trailing slash in ISSUER is important:
+OIDC_ISSUER_URL="https://example.us.auth0.com/"
+OIDC_CLIENT_ID="your client id"
+OIDC_CLIENT_SECRET="your client secret"
+OIDC_SESSION_ENCRYPTION_KEY="password at least 32 characters long to encrypt sessions"
+OIDC_AUDIENCE="The audience of the Auth0 API you configured"
+
+BASE_URL=http://localhost:3000
