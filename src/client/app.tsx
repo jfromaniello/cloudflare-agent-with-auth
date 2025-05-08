@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback, use } from "react";
 import { useAgent } from "agents/react";
 import { useAgentChat } from "agents/ai-react";
 import type { Message } from "@ai-sdk/react";
-import type { tools } from "./tools";
+import type { tools } from "../tools";
 
 // Component imports
 import { Button } from "@/components/button/Button";
@@ -21,9 +21,9 @@ import {
   PaperPlaneTilt,
 } from "@phosphor-icons/react";
 import { useNavigate, useParams } from "react-router";
-import useUser from "./hooks/useUser";
+import useUser from "../hooks/useUser";
 import { Layout } from "./Layout";
-import { Tooltip } from "./components/tooltip/Tooltip";
+import { Tooltip } from "../components/tooltip/Tooltip";
 
 // List of tools that require human confirmation
 const toolsRequiringConfirmation: (keyof typeof tools)[] = [

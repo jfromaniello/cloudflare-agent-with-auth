@@ -1,7 +1,7 @@
 // Component imports
 
 // Icon imports
-import useUser from "./hooks/useUser";
+import useUser from "../hooks/useUser";
 import { Layout } from "./Layout";
 
 export default function Home() {
