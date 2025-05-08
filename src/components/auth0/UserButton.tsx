@@ -76,7 +76,7 @@ export default function UserButton({
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56 bg-neutral-50 text-neutral-900 dark:bg-neutral-900 dark:text-neutral-50" align="end" forceMount>
+      <DropdownMenuContent className="w-56 bg-neutral-50 text-neutral-900 dark:bg-neutral-900 dark:text-neutral-50 border-neutral-300 dark:border-neutral-750" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex gap-3">
             <Avatar className="h-8 w-8">
