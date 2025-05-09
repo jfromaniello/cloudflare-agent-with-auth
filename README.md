@@ -130,6 +130,15 @@ This starter kit uses Auth0 for authentication and authorization:
 4. API requests and WebSocket connections are secured with the JWT token
 5. Each chat is associated with its owner (user ID) to ensure data isolation
 
+### Authentication Packages
+
+This project utilizes two key npm packages for authentication:
+
+- [`hono-openid-connect`](https://github.com/honojs/middleware/tree/main/packages/auth-js/openid-connect) - Handles browser-based authentication flows, session management, and token handling for the web interface.
+- [`agents-oauth2-jwt-bearer`](https://github.com/cloudflare/agents/tree/main/packages/agents-oauth2-jwt-bearer) - Secures WebSocket connections and API endpoints for the agent, providing JWT validation and authorization for all agent interactions.
+
+These packages work together to provide a comprehensive authentication solution that secures both the web interface and the underlying agent communication.
+
 ## Customization Guide
 
 ### Adding New Tools
