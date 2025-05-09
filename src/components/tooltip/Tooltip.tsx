@@ -1,5 +1,5 @@
 import { useTooltip } from "@/providers/TooltipProvider";
-import { cn } from "@/lib/utils";
+import { cn, getHiddenSides } from "@/lib/utils";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 export type TooltipProps = {
@@ -39,6 +39,11 @@ export const Tooltip = ({ children, className, content, id }: TooltipProps) => {
         const { top, left, bottom, right } = tooltipRect;
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
+        const hiddenSides = getHiddenSides(ref);
+
+        if (hiddenSides.includes('top')) setPositionY("bottom");
+        if (hiddenSides.includes('right')) setPositionX("left");
+        if (hiddenSides.includes('left')) setPositionX("right");
 
         if (top <= 0) setPositionY("bottom");
         if (left <= 0) setPositionX("left");

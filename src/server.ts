@@ -1,127 +1,106 @@
-import { routeAgentRequest, type Schedule } from "agents";
-
-import { unstable_getSchedulePrompt } from "agents/schedule";
-
-import { AIChatAgent } from "agents/ai-chat-agent";
+import { agentsMiddleware } from "hono-agents";
 import {
-  createDataStreamResponse,
-  generateId,
-  streamText,
-  type StreamTextOnFinishCallback,
-  type ToolSet,
-} from "ai";
-import { openai } from "@ai-sdk/openai";
-import { processToolCalls } from "./utils";
-import { tools, executions } from "./tools";
-// import { env } from "cloudflare:workers";
+  auth,
+  requiresAuth,
+  type OIDCVariables,
+  type UserInfo,
+} from "hono-openid-connect";
+import { Hono } from "hono";
+import { logger } from "hono/logger";
+import { createNewChat, listChats } from "./chats";
 
-const model = openai("gpt-4o-2024-11-20");
-// Cloudflare AI Gateway
-// const openai = createOpenAI({
-//   apiKey: env.OPENAI_API_KEY,
-//   baseURL: env.GATEWAY_BASE_URL,
-// });
+export { Chat } from "./agent";
 
-/**
- * Chat Agent implementation that handles real-time AI chat interactions
- */
-export class Chat extends AIChatAgent<Env> {
-  /**
-   * Handles incoming chat messages and manages the response stream
-   * @param onFinish - Callback function executed when streaming completes
-   */
+export type HonoEnv = {
+  Bindings: Env;
+  Variables: OIDCVariables<{
+    user: UserInfo | null;
+  }>;
+};
 
-  async onChatMessage(
-    onFinish: StreamTextOnFinishCallback<ToolSet>,
-    options?: { abortSignal?: AbortSignal }
-  ) {
-    // const mcpConnection = await this.mcp.connect(
-    //   "https://path-to-mcp-server/sse"
-    // );
+const app = new Hono<HonoEnv>();
 
-    // Collect all tools, including MCP tools
-    const allTools = {
-      ...tools,
-      ...this.mcp.unstable_getAITools(),
-    };
+app.use(logger());
 
-    // Create a streaming response that handles both text and tool outputs
-    const dataStreamResponse = createDataStreamResponse({
-      execute: async (dataStream) => {
-        // Process any pending tool calls from previous messages
-        // This handles human-in-the-loop confirmations for tools
-        const processedMessages = await processToolCalls({
-          messages: this.messages,
-          dataStream,
-          tools: allTools,
-          executions,
-        });
+app.use(
+  auth({
+    authRequired: false,
+    idpLogout: true,
+    debug(message) {
+      console.log(message);
+    },
+  })
+);
 
-        // Stream the AI response using GPT-4
-        const result = streamText({
-          model,
-          system: `You are a helpful assistant that can do various tasks... 
-
-${unstable_getSchedulePrompt({ date: new Date() })}
-
-If the user asks to schedule a task, use the schedule tool to schedule the task.
-`,
-          messages: processedMessages,
-          tools: allTools,
-          onFinish: async (args) => {
-            onFinish(
-              args as Parameters<StreamTextOnFinishCallback<ToolSet>>[0]
-            );
-            // await this.mcp.closeConnection(mcpConnection.id);
-          },
-          onError: (error) => {
-            console.error("Error while streaming:", error);
-          },
-          maxSteps: 10,
-        });
-
-        // Merge the AI response stream with tool execution outputs
-        result.mergeIntoDataStream(dataStream);
-      },
-    });
-
-    return dataStreamResponse;
+app.get("/user", async (c): Promise<Response> => {
+  const session = c.get("session");
+  if (!c.get("oidc")?.isAuthenticated) {
+    session?.set("user", null);
+    return c.json({ error: "User not authenticated" }, 401);
   }
-  async executeTask(description: string, task: Schedule<string>) {
-    await this.saveMessages([
-      ...this.messages,
-      {
-        id: generateId(),
-        role: "user",
-        content: `Running scheduled task: ${description}`,
-        createdAt: new Date(),
-      },
-    ]);
+  let userInfo = session?.get("user");
+  if (!userInfo) {
+    userInfo = await c.var.oidc?.fetchUserInfo();
+    if (!userInfo) {
+      return c.json({ error: "User not authenticated" }, 401);
+    }
+    session?.set("user", userInfo);
   }
-}
+  return c.json(userInfo);
+});
 
-/**
- * Worker entry point that routes incoming requests to the appropriate handler
- */
-export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
-    const url = new URL(request.url);
+app.get("/check-open-ai-key", async (c) => {
+  return c.json({
+    success: process.env.OPENAI_API_KEY !== undefined,
+  });
+});
 
-    if (url.pathname === "/check-open-ai-key") {
-      const hasOpenAIKey = !!process.env.OPENAI_API_KEY;
-      return Response.json({
-        success: hasOpenAIKey,
-      });
-    }
-    if (!process.env.OPENAI_API_KEY) {
-      console.error(
-        "OPENAI_API_KEY is not set, don't forget to set it locally in .dev.vars, and use `wrangler secret bulk .dev.vars` to upload it to production"
-      );
-    }
-    return (
-      // Route the request to our agent or return 404 if not found
-      (await routeAgentRequest(request, env)) ||
-      new Response("Not found", { status: 404 })
-    );
-  },
-} satisfies ExportedHandler<Env>;
+
+app.post("/api/chats", requiresAuth(), async (c) => {
+  const id = await createNewChat(c);
+  return c.json({ id });
+});
+
+app.get("/api/chats", requiresAuth(), async (c) => {
+  const chats = await listChats(c);
+  return c.json(chats);
+});
+
+
+app.get("/c/new", requiresAuth(), async (c) => {
+  const id = await createNewChat(c);
+  return c.redirect(`/c/${id}`);
+});
+
+app.get("/c/:chadID", requiresAuth(), async (c) => {
+  const res = await c.env.ASSETS.fetch(new URL("/", c.req.url));
+  return new Response(res.body, res);
+});
+
+app.use("/agents/*", requiresAuth("error"), async (c, next) => {
+  const tokenSet = c.var.oidc?.tokens;
+  const addToken = (req: Request) => {
+    const accessToken = tokenSet?.access_token as string;
+    req.headers.set("Authorization", `Bearer ${accessToken}`);
+    return req;
+  };
+  return agentsMiddleware({
+    options: {
+      prefix: `agents`,
+      async onBeforeRequest(req) {
+        return addToken(req);
+      },
+      async onBeforeConnect(req, lobby) {
+        return addToken(req);
+      },
+    },
+    // @ts-ignore
+  })(c, next);
+});
+
+app.use("*", async (c, next) => {
+  const res = await c.env.ASSETS.fetch(c.req.raw);
+  return new Response(res.body, res);
+});
+
+export default app;

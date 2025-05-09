@@ -1,14 +1,14 @@
-# 🤖 Chat Agent Starter Kit
+# 🤖 Chat Agent Starter Kit with Auth0 Authentication
 
-![agents-header](https://github.com/user-attachments/assets/f6d99eeb-1803-4495-9c5e-3cf07a37b402)
+![agents-header](./public/cloudflare-agents-auth0-sm.png)
 
-<a href="https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/agents-starter"><img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare"/></a>
-
-A starter template for building AI-powered chat agents using Cloudflare's Agent platform, powered by [`agents`](https://www.npmjs.com/package/agents). This project provides a foundation for creating interactive chat experiences with AI, complete with a modern UI and tool integration capabilities.
+A starter template for building AI-powered chat agents using Cloudflare's Agent platform, powered by [`agents`](https://www.npmjs.com/package/agents) and secured with Auth0 authentication. This project provides a foundation for creating interactive chat experiences with AI, complete with a modern UI, tool integration capabilities, and user authentication.
 
 ## Features
 
 - 💬 Interactive chat interface with AI
+- 🔐 Auth0 authentication and authorization
+- 👤 User-specific chat history and management
 - 🛠️ Built-in tool system with human-in-the-loop confirmation
 - 📅 Advanced task scheduling (one-time, delayed, and recurring via cron)
 - 🌓 Dark/Light theme support
@@ -18,15 +18,42 @@ A starter template for building AI-powered chat agents using Cloudflare's Agent 
 
 ## Prerequisites
 
-- Cloudflare account
+- Cloudflare account with Workers & Workers AI enabled
 - OpenAI API key
+- Auth0 account with a configured:
+  - Single Page Application (SPA client)
+  - API (resource server)
+
+## Auth0 Configuration
+
+### Step 1: Create an Auth0 API
+
+1. Log in to your Auth0 dashboard
+2. Navigate to "Applications > APIs" and click "Create API"
+3. Provide a name and identifier (audience)
+4. Under settings, make sure "Allow Offline Access" is enabled
+5. Note the API Identifier (audience) for later use
+
+### Step 2: Create an Auth0 Application (SPA)
+
+1. In your Auth0 dashboard, go to "Applications" and click "Create Application"
+2. Select "Single Page Application" as the application type
+3. Configure the following settings:
+   - Allowed Callback URLs: `http://localhost:3000/api/auth/callback` (development) and your production URL
+   - Allowed Logout URLs: `http://localhost:3000` (development) and your production URL
+   - Allowed Web Origins: `http://localhost:3000` (development) and your production URL
+4. Under "Advanced Settings > OAuth", ensure that:
+   - "JSON Web Token (JWT) Signature Algorithm" is set to RS256
+   - "OIDC Conformant" is enabled
+5. Note your Domain, Client ID, and Client Secret for later use
 
 ## Quick Start
 
-1. Create a new project:
+1. Clone the repository:
 
 ```bash
-npm create cloudflare@latest -- --template cloudflare/agents-starter
+git clone https://github.com/jfromaniello/cloudflare-agent-with-auth.git
+cd cloudflare-agent-with-auth
 ```
 
 2. Install dependencies:
@@ -37,10 +64,22 @@ npm install
 
 3. Set up your environment:
 
-Create a `.dev.vars` file:
+Create a `.dev.vars` file based on the example:
 
 ```env
-OPENAI_API_KEY=your_openai_api_key
+# OpenAI API key
+OPENAI_API_KEY=sk-your-openai-api-key
+
+# Auth0 Configuration
+# trailing slash in ISSUER is important:
+OIDC_ISSUER_URL="https://your-tenant.us.auth0.com/"
+OIDC_CLIENT_ID="your-auth0-client-id"
+OIDC_CLIENT_SECRET="your-auth0-client-secret"
+OIDC_SESSION_ENCRYPTION_KEY="generate-a-random-key-at-least-32-characters-long"
+OIDC_AUDIENCE="https://your-auth0-api-identifier"
+
+# Application base URL
+BASE_URL=http://localhost:3000
 ```
 
 4. Run locally:
@@ -59,18 +98,43 @@ npm run deploy
 
 ```
 ├── src/
-│   ├── app.tsx        # Chat UI implementation
-│   ├── server.ts      # Chat agent logic
-│   ├── tools.ts       # Tool definitions
-│   ├── utils.ts       # Helper functions
-│   └── styles.css     # UI styling
+│   ├── server.ts                # Main worker with auth configuration
+│   ├── chats.ts                 # Chat management functions
+│   ├── agent/                   # Agent-related code
+│   │   ├── index.ts             # Chat agent implementation with Auth0 integration
+│   │   ├── tools.ts             # Tool definitions and implementations
+│   │   ├── utils.ts             # Agent utility functions
+│   │   └── shared.ts            # Shared constants and types
+│   ├── client/                  # Frontend client application
+│   │   ├── app.tsx              # Chat UI implementation
+│   │   ├── home.tsx             # Home page component
+│   │   ├── index.tsx            # Entry point for React app
+│   │   ├── Layout.tsx           # Layout component
+│   │   └── styles.css           # UI styling
+│   ├── components/              # UI components
+│   │   ├── auth0/               # Auth0-specific components
+│   │   ├── chatList/            # Chat list components
+│   │   └── ...                  # Other UI components
+│   └── hooks/                   # React hooks
+│       ├── useUser.tsx          # User authentication hook
+│       └── ...                  # Other custom hooks
 ```
+
+## Authentication Flow
+
+This starter kit uses Auth0 for authentication and authorization:
+
+1. Users log in using Auth0 credentials
+2. Auth0 provides JWT tokens for API authentication
+3. The Agent use the `WithAuth` mixin from the `agents-oauth2-jwt-bearer` package to validate the JWT token
+4. API requests and WebSocket connections are secured with the JWT token
+5. Each chat is associated with its owner (user ID) to ensure data isolation
 
 ## Customization Guide
 
 ### Adding New Tools
 
-Add new tools in `tools.ts` using the tool builder:
+Add new tools in `src/agent/tools.ts` using the tool builder:
 
 ```typescript
 // Example of a tool that requires confirmation
@@ -88,20 +152,6 @@ const getCurrentTime = tool({
   description: "Get current server time",
   parameters: z.object({}),
   execute: async () => new Date().toISOString(),
-});
-
-// Scheduling tool implementation
-const scheduleTask = tool({
-  description:
-    "schedule a task to be executed at a later time. 'when' can be a date, a delay in seconds, or a cron pattern.",
-  parameters: z.object({
-    type: z.enum(["scheduled", "delayed", "cron"]),
-    when: z.union([z.number(), z.string()]),
-    payload: z.string(),
-  }),
-  execute: async ({ type, when, payload }) => {
-    // ... see the implementation in tools.ts
-  },
 });
 ```
 
@@ -124,118 +174,19 @@ export const executions = {
 };
 ```
 
-Tools can be configured in two ways:
+### Extending Auth0 Integration
 
-1. With an `execute` function for automatic execution
-2. Without an `execute` function, requiring confirmation and using the `executions` object to handle the confirmed action
+The integration uses Hono's OpenID Connect middleware for authentication and session management. You can customize the authentication behavior in `src/server.ts`.
 
-### Use a different AI model provider
-
-The starting [`server.ts`](https://github.com/cloudflare/agents-starter/blob/main/src/server.ts) implementation uses the [`ai-sdk`](https://sdk.vercel.ai/docs/introduction) and the [OpenAI provider](https://sdk.vercel.ai/providers/ai-sdk-providers/openai), but you can use any AI model provider by:
-
-1. Installing an alternative AI provider for the `ai-sdk`, such as the [`workers-ai-provider`](https://sdk.vercel.ai/providers/community-providers/cloudflare-workers-ai) or [`anthropic`](https://sdk.vercel.ai/providers/ai-sdk-providers/anthropic) provider:
-2. Replacing the AI SDK with the [OpenAI SDK](https://github.com/openai/openai-node)
-3. Using the Cloudflare [Workers AI + AI Gateway](https://developers.cloudflare.com/ai-gateway/providers/workersai/#workers-binding) binding API directly
-
-For example, to use the [`workers-ai-provider`](https://sdk.vercel.ai/providers/community-providers/cloudflare-workers-ai), install the package:
-
-```sh
-npm install workers-ai-provider
-```
-
-Add an `ai` binding to `wrangler.jsonc`:
-
-```jsonc
-// rest of file
-  "ai": {
-    "binding": "AI"
-  }
-// rest of file
-```
-
-Replace the `@ai-sdk/openai` import and usage with the `workers-ai-provider`:
-
-```diff
-// server.ts
-// Change the imports
-- import { openai } from "@ai-sdk/openai";
-+ import { createWorkersAI } from 'workers-ai-provider';
-
-// Create a Workers AI instance
-+ const workersai = createWorkersAI({ binding: env.AI });
-
-// Use it when calling the streamText method (or other methods)
-// from the ai-sdk
-- const model = openai("gpt-4o-2024-11-20");
-+ const model = workersai("@cf/deepseek-ai/deepseek-r1-distill-qwen-32b")
-```
-
-Commit your changes and then run the `agents-starter` as per the rest of this README.
-
-### Modifying the UI
-
-The chat interface is built with React and can be customized in `app.tsx`:
-
-- Modify the theme colors in `styles.css`
-- Add new UI components in the chat container
-- Customize message rendering and tool confirmation dialogs
-- Add new controls to the header
-
-### Example Use Cases
-
-1. **Customer Support Agent**
-
-   - Add tools for:
-     - Ticket creation/lookup
-     - Order status checking
-     - Product recommendations
-     - FAQ database search
-
-2. **Development Assistant**
-
-   - Integrate tools for:
-     - Code linting
-     - Git operations
-     - Documentation search
-     - Dependency checking
-
-3. **Data Analysis Assistant**
-
-   - Build tools for:
-     - Database querying
-     - Data visualization
-     - Statistical analysis
-     - Report generation
-
-4. **Personal Productivity Assistant**
-
-   - Implement tools for:
-     - Task scheduling with flexible timing options
-     - One-time, delayed, and recurring task management
-     - Task tracking with reminders
-     - Email drafting
-     - Note taking
-
-5. **Scheduling Assistant**
-   - Build tools for:
-     - One-time event scheduling using specific dates
-     - Delayed task execution (e.g., "remind me in 30 minutes")
-     - Recurring tasks using cron patterns
-     - Task payload management
-     - Flexible scheduling patterns
-
-Each use case can be implemented by:
-
-1. Adding relevant tools in `tools.ts`
-2. Customizing the UI for specific interactions
-3. Extending the agent's capabilities in `server.ts`
-4. Adding any necessary external API integrations
+The agent uses the `WithAuth` mixin from `agents-oauth2-jwt-bearer` package to secure API endpoints and WebSocket connections. Each chat is associated with its owner through the `setOwner` method to ensure users can only access their own chats.
 
 ## Learn More
 
 - [`agents`](https://github.com/cloudflare/agents/blob/main/packages/agents/README.md)
+- [`agents-oauth2-jwt-bearer`](https://github.com/cloudflare/agents/tree/main/packages/agents-oauth2-jwt-bearer)
 - [Cloudflare Agents Documentation](https://developers.cloudflare.com/agents/)
 - [Cloudflare Workers Documentation](https://developers.cloudflare.com/workers/)
+- [Auth0 Documentation](https://auth0.com/docs/)
 
 ## License
 
