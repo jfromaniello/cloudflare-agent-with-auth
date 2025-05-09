@@ -21,7 +21,7 @@ A starter template for building AI-powered chat agents using Cloudflare's Agent 
 - Cloudflare account with Workers & Workers AI enabled
 - OpenAI API key
 - Auth0 account with a configured:
-  - Single Page Application (SPA client)
+  - Web Application
   - API (resource server)
 
 ## Auth0 Configuration
@@ -34,18 +34,16 @@ A starter template for building AI-powered chat agents using Cloudflare's Agent 
 4. Under settings, make sure "Allow Offline Access" is enabled
 5. Note the API Identifier (audience) for later use
 
-### Step 2: Create an Auth0 Application (SPA)
+### Step 2: Create an Auth0 Application
+
+Note: you can also use the default app.
 
 1. In your Auth0 dashboard, go to "Applications" and click "Create Application"
-2. Select "Single Page Application" as the application type
+2. Select "Web Application" as the application type
 3. Configure the following settings:
-   - Allowed Callback URLs: `http://localhost:3000/api/auth/callback` (development) and your production URL
+   - Allowed Callback URLs: `http://localhost:3000/callback` (development) and your production URL
    - Allowed Logout URLs: `http://localhost:3000` (development) and your production URL
-   - Allowed Web Origins: `http://localhost:3000` (development) and your production URL
-4. Under "Advanced Settings > OAuth", ensure that:
-   - "JSON Web Token (JWT) Signature Algorithm" is set to RS256
-   - "OIDC Conformant" is enabled
-5. Note your Domain, Client ID, and Client Secret for later use
+4. Note your Domain, Client ID, and Client Secret for later use
 
 ## Quick Start
 
