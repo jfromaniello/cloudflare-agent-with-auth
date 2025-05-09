@@ -31,8 +31,7 @@ A starter template for building AI-powered chat agents using Cloudflare's Agent 
 1. Log in to your Auth0 dashboard
 2. Navigate to "Applications > APIs" and click "Create API"
 3. Provide a name and identifier (audience)
-4. Under settings, make sure "Allow Offline Access" is enabled
-5. Note the API Identifier (audience) for later use
+4. Note the API Identifier (audience) for later use
 
 ### Step 2: Create an Auth0 Application
 
