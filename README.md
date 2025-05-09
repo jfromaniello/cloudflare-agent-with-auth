@@ -1,6 +1,6 @@
 # 🤖 Chat Agent Starter Kit with Auth0 Authentication
 
-![agents-header](./public/cloudflare-agents-auth0.png)
+![agents-header](./public/cloudflare-agents-auth0-sm.png)
 
 A starter template for building AI-powered chat agents using Cloudflare's Agent platform, powered by [`agents`](https://www.npmjs.com/package/agents) and secured with Auth0 authentication. This project provides a foundation for creating interactive chat experiences with AI, complete with a modern UI, tool integration capabilities, and user authentication.
 
