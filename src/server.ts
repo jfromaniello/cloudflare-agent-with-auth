@@ -1,13 +1,24 @@
 import { agentsMiddleware } from "hono-agents";
-import { auth, requiresAuth, type OIDCVariables, type UserInfo } from "hono-openid-connect";
+import {
+  auth,
+  requiresAuth,
+  type OIDCVariables,
+  type UserInfo,
+} from "hono-openid-connect";
 import { Hono } from "hono";
-import { logger } from 'hono/logger';
-import { generateId } from "ai";
-export { Chat } from './agent';
+import { logger } from "hono/logger";
+import { createNewChat, listChats } from "./chats";
 
-const app = new Hono<{ Bindings: Env; Variables: OIDCVariables<{
-  user: UserInfo | null
-}>}>();
+export { Chat } from "./agent";
+
+export type HonoEnv = {
+  Bindings: Env;
+  Variables: OIDCVariables<{
+    user: UserInfo | null;
+  }>;
+};
+
+const app = new Hono<HonoEnv>();
 
 app.use(logger());
 
@@ -15,22 +26,25 @@ app.use(
   auth({
     authRequired: false,
     idpLogout: true,
+    debug(message) {
+      console.log(message);
+    },
   })
 );
 
 app.get("/user", async (c): Promise<Response> => {
-  const session = c.get('session');
-  if (!c.get('oidc')?.isAuthenticated) {
-    session?.set('user', null)
+  const session = c.get("session");
+  if (!c.get("oidc")?.isAuthenticated) {
+    session?.set("user", null);
     return c.json({ error: "User not authenticated" }, 401);
   }
-  let userInfo = session?.get('user');
+  let userInfo = session?.get("user");
   if (!userInfo) {
     userInfo = await c.var.oidc?.fetchUserInfo();
     if (!userInfo) {
       return c.json({ error: "User not authenticated" }, 401);
     }
-    session?.set('user', userInfo);
+    session?.set("user", userInfo);
   }
   return c.json(userInfo);
 });
@@ -41,44 +55,21 @@ app.get("/check-open-ai-key", async (c) => {
   });
 });
 
-type ChatListItem = {
-  id: string;
-  createdAt: number;
-}
 
-app.post("/c", requiresAuth(),  async (c) => {
-  const id = generateId();
-  const chatID = c.env.Chat.idFromName(id);
-  const stub = c.env.Chat.get(chatID);
-  const userID = c.var.oidc?.claims?.sub as string;
-  await stub.setOwner(userID);
-  //insert the chat into the list
-  await c.env.ChatList.put(userID, JSON.stringify([
-    ...(await c.env.ChatList.get<ChatListItem[]>(userID, 'json') ?? []),
-    {
-      id,
-      createdAt: Date.now(),
-    }
-  ]));
+app.post("/api/chats", requiresAuth(), async (c) => {
+  const id = await createNewChat(c);
   return c.json({ id });
 });
 
-app.get("/c", requiresAuth(), async (c) => {
-  const userID = c.var.oidc?.claims?.sub as string;
-  const chats: ChatListItem[] = await c.env.ChatList.get<ChatListItem[]>(userID, 'json') ?? [];
-  const chatsWithTitle = await Promise.all(chats.map(async (chat) => {
-    const chatID = c.env.Chat.idFromName(chat.id);
-    const stub = c.env.Chat.get(chatID);
-    const title = await stub.getTitle();
-    return {
-      ...chat,
-      title,
-    };
-  }));
-  const sortedChats = chatsWithTitle.sort((a, b) => {
-    return b.createdAt - a.createdAt;
-  });
-  return c.json(sortedChats);
+app.get("/api/chats", requiresAuth(), async (c) => {
+  const chats = await listChats(c);
+  return c.json(chats);
+});
+
+
+app.get("/c/new", requiresAuth(), async (c) => {
+  const id = await createNewChat(c);
+  return c.redirect(`/c/${id}`);
 });
 
 app.get("/c/:chadID", requiresAuth(), async (c) => {
@@ -86,7 +77,7 @@ app.get("/c/:chadID", requiresAuth(), async (c) => {
   return new Response(res.body, res);
 });
 
-app.use("/agents/*", requiresAuth('error'), async (c, next) => {
+app.use("/agents/*", requiresAuth("error"), async (c, next) => {
   const tokenSet = c.var.oidc?.tokens;
   const addToken = (req: Request) => {
     const accessToken = tokenSet?.access_token as string;

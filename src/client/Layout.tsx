@@ -9,6 +9,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import UserButton from "../components/auth0/UserButton";
 import { DropdownMenuItem } from "../components/ui/dropdown-menu";
 import React from "react";
+import { createNewChat } from "./chats";
 
 // Tipos para las props de los slots
 type SlotProps = { children: ReactNode };
@@ -37,15 +38,6 @@ export function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { user } = useUser();
 
-  const createNewChat = async () => {
-    // const newThread = generateId();
-    const createChatResponse = await fetch("/c", {
-      method: "POST",
-      credentials: "include",
-    });
-    const { id } = (await createChatResponse.json()) as { id: string };
-    navigate(`/c/${id}`);
-  };
 
   const [theme, setTheme] = useState<"dark" | "light">(() => {
     // Check localStorage first, default to dark if not found
@@ -98,11 +90,7 @@ export function Layout({ children }: { children: ReactNode }) {
             <div className="flex-1">
               <h2 className="font-semibold text-base">
                 <a
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    navigate("/");
-                  }}
+                  href="/"
                 >
                   Home
                 </a>
@@ -112,18 +100,16 @@ export function Layout({ children }: { children: ReactNode }) {
             {/* Extra toolbar elements */}
             {toolbarElements.length > 0 && toolbarElements}
 
-            {user && (
-              <Button
-                variant="ghost"
-                size="md"
-                shape="square"
-                className="rounded-full h-9 w-9 cursor-pointer"
-                tooltip={"New Thread"}
-                onClick={createNewChat}
-              >
-                <FilePlus size={20} />
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="md"
+              shape="square"
+              className="rounded-full h-9 w-9 cursor-pointer"
+              tooltip={"New Thread"}
+              onClick={() => createNewChat(navigate)}
+            >
+              <FilePlus size={20} />
+            </Button>
 
             {user && (
               <UserButton user={user} logoutUrl="/logout">

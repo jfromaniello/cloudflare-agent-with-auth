@@ -4,21 +4,12 @@
 import ChatList from "@/components/chatList";
 import useUser from "../hooks/useUser";
 import { Layout } from "./Layout";
+import { createNewChat } from "./chats";
 import { useNavigate } from "react-router";
 
 export default function Home() {
   const { user } = useUser();
   const navigate = useNavigate();
-
-  const createNewChat = async () => {
-    // const newThread = generateId();
-    const createChatResponse = await fetch("/c", {
-      method: "POST",
-      credentials: "include",
-    });
-    const { id } = (await createChatResponse.json()) as { id: string };
-    navigate(`/c/${id}`);
-  };
 
   return (
     <Layout>
@@ -33,18 +24,14 @@ export default function Home() {
               </a>
             </p>
           )}
+          <button
+            onClick={() => createNewChat(navigate)}
+            className="text-sm font-medium py-2 px-4 rounded-lg shadow transition cursor-pointer"
+          >
+            New Chat
+          </button>
 
-          {user && (
-            <>
-              <button
-                onClick={() => createNewChat()}
-                className="text-sm font-medium py-2 px-4 rounded-lg shadow transition cursor-pointer"
-              >
-                New Chat
-              </button>
-              <ChatList />
-            </>
-          )}
+          {user && <ChatList />}
         </div>
       </Layout.Content>
     </Layout>

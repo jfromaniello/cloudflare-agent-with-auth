@@ -13,7 +13,7 @@ export default function ChatList() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch("/c")
+    fetch("/api/chats")
       .then((res) => res.json() as Promise<Chat[]>)
       .then((data) => {
         const sorted = [...data].sort((a, b) => b.createdAt - a.createdAt);
