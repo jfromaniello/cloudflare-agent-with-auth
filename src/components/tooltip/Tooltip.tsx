@@ -41,9 +41,9 @@ export const Tooltip = ({ children, className, content, id }: TooltipProps) => {
         const viewportHeight = window.innerHeight;
         const hiddenSides = getHiddenSides(ref);
 
-        if (hiddenSides.includes('top')) setPositionY("bottom");
-        if (hiddenSides.includes('right')) setPositionX("left");
-        if (hiddenSides.includes('left')) setPositionX("right");
+        if (hiddenSides.includes("top")) setPositionY("bottom");
+        if (hiddenSides.includes("right")) setPositionX("left");
+        if (hiddenSides.includes("left")) setPositionX("right");
 
         if (top <= 0) setPositionY("bottom");
         if (left <= 0) setPositionX("left");

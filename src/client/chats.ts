@@ -6,7 +6,7 @@ export const createNewChat = async (navigate: NavigateFunction) => {
     credentials: "include",
   });
   if (response.status === 401) {
-    window.location.href = '/c/new';
+    window.location.href = "/c/new";
     return;
   }
   const { id } = (await response.json()) as { id: string };

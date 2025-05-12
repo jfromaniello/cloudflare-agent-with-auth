@@ -36,7 +36,9 @@ export default function ChatList() {
             className="border rounded-xl p-4 hover:bg-neutral-100 transition cursor-pointer"
             onClick={() => navigate(`/c/${chat.id}`)}
           >
-            <h2 className="text-lg font-medium text-neutral-900">{chat.title}</h2>
+            <h2 className="text-lg font-medium text-neutral-900">
+              {chat.title}
+            </h2>
             <p className="text-sm text-neutral-500">
               {formatDistanceToNow(chat.createdAt, { addSuffix: true })}
             </p>

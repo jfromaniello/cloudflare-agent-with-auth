@@ -14,12 +14,7 @@ import { MemoizedMarkdown } from "@/components/memoized-markdown";
 import { ToolInvocationCard } from "@/components/tool-invocation-card/ToolInvocationCard";
 
 // Icon imports
-import {
-  Bug,
-  Robot,
-  Trash,
-  PaperPlaneTilt,
-} from "@phosphor-icons/react";
+import { Bug, Robot, Trash, PaperPlaneTilt } from "@phosphor-icons/react";
 import { useNavigate, useParams } from "react-router";
 import useUser from "../hooks/useUser";
 import { Layout } from "./Layout";

@@ -38,11 +38,10 @@ export function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { user } = useUser();
 
-
   const [theme, setTheme] = useState<"dark" | "light">(() => {
     // Check localStorage first, default to dark if not found
     const savedTheme = localStorage.getItem("theme");
-    return (savedTheme as "dark" | "light") || "dark";
+    return (savedTheme as "dark" | "light") || "light";
   });
 
   useEffect(() => {
@@ -89,11 +88,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
             <div className="flex-1">
               <h2 className="font-semibold text-base">
-                <a
-                  href="/"
-                >
-                  Home
-                </a>
+                <a href="/">Home</a>
               </h2>
             </div>
 

@@ -1,3 +1,4 @@
+import { Hono } from "hono";
 import { agentsMiddleware } from "hono-agents";
 import {
   auth,
@@ -5,7 +6,6 @@ import {
   type OIDCVariables,
   type UserInfo,
 } from "hono-openid-connect";
-import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { createNewChat, listChats } from "./chats";
 
@@ -26,9 +26,6 @@ app.use(
   auth({
     authRequired: false,
     idpLogout: true,
-    debug(message) {
-      console.log(message);
-    },
   })
 );
 
@@ -55,7 +52,6 @@ app.get("/check-open-ai-key", async (c) => {
   });
 });
 
-
 app.post("/api/chats", requiresAuth(), async (c) => {
   const id = await createNewChat(c);
   return c.json({ id });
@@ -65,7 +61,6 @@ app.get("/api/chats", requiresAuth(), async (c) => {
   const chats = await listChats(c);
   return c.json(chats);
 });
-
 
 app.get("/c/new", requiresAuth(), async (c) => {
   const id = await createNewChat(c);

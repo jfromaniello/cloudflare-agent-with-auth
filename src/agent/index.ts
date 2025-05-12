@@ -9,7 +9,7 @@ import {
   streamText,
   type StreamTextOnFinishCallback,
   type ToolSet,
-  type Message
+  type Message,
 } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { processToolCalls } from "./utils";
@@ -25,7 +25,7 @@ export class Chat extends WithAuth(AIChatAgent<Env>) {
   private async isCurrentUserOwner(): Promise<boolean> {
     const userInfo = await this.getUserInfo();
     const agentStorage = this.ctx.storage;
-    const objectOwner = await agentStorage.get('owner');
+    const objectOwner = await agentStorage.get("owner");
     if (objectOwner !== userInfo?.sub) {
       return false;
     }
@@ -34,7 +34,7 @@ export class Chat extends WithAuth(AIChatAgent<Env>) {
 
   async onAuthenticatedConnect(connection: Connection): Promise<void> {
     if (!(await this.isCurrentUserOwner())) {
-      connection.close(1008, 'This chat is not yours.');
+      connection.close(1008, "This chat is not yours.");
     }
   }
 
@@ -123,10 +123,7 @@ The name of the user is ${userInfo.name ?? "unknown"}.
     ]);
   }
 
-  async generateTitle(
-    messages: Message[],
-    newText: string
-  ): Promise<void> {
+  async generateTitle(messages: Message[], newText: string): Promise<void> {
     if (messages.length < 2) return;
     if (messages.length > 6) return;
     const { text: title } = await generateText({
@@ -140,8 +137,7 @@ The name of the user is ${userInfo.name ?? "unknown"}.
 
       ${messages
         .map((message) => `- ${message.role}: ${message.content}`)
-        .join("\n")
-      }\n
+        .join("\n")}\n
       - assistant: ${newText}
       `,
     });
@@ -153,7 +149,7 @@ The name of the user is ${userInfo.name ?? "unknown"}.
     if (title) {
       return title;
     }
-    return 'New Chat';
+    return "New Chat";
   }
 
   async setOwner(owner: string): Promise<void> {
