@@ -1,25 +1,25 @@
-import { useEffect, useState, useRef, useCallback, use } from "react";
-import { useAgent } from "agents/react";
-import { useAgentChat } from "agents/ai-react";
 import type { Message } from "@ai-sdk/react";
+import { useAgentChat } from "agents/ai-react";
+import { useAgent } from "agents/react";
+import { use, useCallback, useEffect, useRef, useState } from "react";
 import type { tools } from "../agent/tools";
 
 // Component imports
+import { Avatar } from "@/components/avatar/Avatar";
 import { Button } from "@/components/button/Button";
 import { Card } from "@/components/card/Card";
-import { Avatar } from "@/components/avatar/Avatar";
-import { Toggle } from "@/components/toggle/Toggle";
-import { Textarea } from "@/components/textarea/Textarea";
 import { MemoizedMarkdown } from "@/components/memoized-markdown";
+import { Textarea } from "@/components/textarea/Textarea";
+import { Toggle } from "@/components/toggle/Toggle";
 import { ToolInvocationCard } from "@/components/tool-invocation-card/ToolInvocationCard";
 
 // Icon imports
-import { Bug, Robot, Trash, PaperPlaneTilt } from "@phosphor-icons/react";
+import useChatTitle from "@/hooks/useChatTitle";
+import { Bug, PaperPlaneTilt, Robot, Trash } from "@phosphor-icons/react";
 import { useNavigate, useParams } from "react-router";
+import { Tooltip } from "../components/tooltip/Tooltip";
 import useUser from "../hooks/useUser";
 import { Layout } from "./Layout";
-import { Tooltip } from "../components/tooltip/Tooltip";
-import useChatTitle from "@/hooks/useChatTitle";
 
 // List of tools that require human confirmation
 const toolsRequiringConfirmation: (keyof typeof tools)[] = [
@@ -278,7 +278,7 @@ export default function Chat() {
                     ? "Please respond to the tool confirmation above..."
                     : "Send a message..."
                 }
-                className="flex w-full border border-neutral-200 dark:border-neutral-700 px-3 py-2 text-base ring-offset-background placeholder:text-neutral-500 dark:placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300 dark:focus-visible:ring-neutral-700 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-2xl !text-base pb-10 dark:bg-neutral-900"
+                className="flex w-full border border-neutral-200 dark:border-neutral-700 px-3 py-2 ring-offset-background placeholder:text-neutral-500 dark:placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300 dark:focus-visible:ring-neutral-700 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-2xl !text-base pb-10 dark:bg-neutral-900"
                 value={agentInput}
                 onChange={(e) => {
                   handleAgentInputChange(e);
