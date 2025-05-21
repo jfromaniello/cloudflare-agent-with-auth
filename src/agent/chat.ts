@@ -1,20 +1,20 @@
 import { type Connection, type Schedule } from "agents";
 import { unstable_getSchedulePrompt } from "agents/schedule";
 
+import { openai } from "@ai-sdk/openai";
+import { WithAuth } from "agents-oauth2-jwt-bearer";
 import { AIChatAgent } from "agents/ai-chat-agent";
 import {
   createDataStreamResponse,
   generateId,
   generateText,
   streamText,
+  type Message,
   type StreamTextOnFinishCallback,
   type ToolSet,
-  type Message,
 } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { executions, tools } from "./tools";
 import { processToolCalls } from "./utils";
-import { tools, executions } from "./tools";
-import { WithAuth } from "agents-oauth2-jwt-bearer";
 
 const model = openai("gpt-4o-2024-11-20");
 
@@ -23,7 +23,7 @@ const model = openai("gpt-4o-2024-11-20");
  */
 export class Chat extends WithAuth(AIChatAgent<Env>) {
   private async isCurrentUserOwner(): Promise<boolean> {
-    const userInfo = await this.getUserInfo();
+    const userInfo = this.getClaims();
     const agentStorage = this.ctx.storage;
     const objectOwner = await agentStorage.get("owner");
     if (objectOwner !== userInfo?.sub) {

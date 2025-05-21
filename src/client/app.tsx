@@ -60,10 +60,6 @@ export default function Chat() {
     name: threadID ?? undefined,
   });
 
-  agent.addEventListener("error", (e) => {
-    console.dir(e);
-  });
-
   const {
     messages: agentMessages,
     input: agentInput,
@@ -74,6 +70,7 @@ export default function Chat() {
   } = useAgentChat({
     agent,
     maxSteps: 5,
+    id: threadID,
   });
 
   // Scroll to bottom when messages change
